@@ -30,6 +30,7 @@ namespace Lab3
 
 	public struct UIInfo
 	{
+        /////Dit is wel slim
 		string from, to;
 		UIClass cls;
 		UIWay way;

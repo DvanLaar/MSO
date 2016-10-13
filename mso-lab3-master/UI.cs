@@ -33,58 +33,68 @@ namespace Lab3
 			int tariefeenheden = Tariefeenheden.getTariefeenheden (info.From, info.To);
 
 			// Compute the column in the table based on choices
-			int tableColumn;
-			// First based on class
-			switch (info.Class) {
-			case UIClass.FirstClass:
-				tableColumn = 3;
-				break;
-			default:
-				tableColumn = 0;
-				break;
-			}
-			// Then, on the discount
-			switch (info.Discount) {
-			case UIDiscount.TwentyDiscount:
-				tableColumn += 1;
-				break;
-			case UIDiscount.FortyDiscount:
-				tableColumn += 2;
-				break;
-			}
+			int tableColumn = getColumn(info);
 
 			// Get price
 			float price = PricingTable.getPrice (tariefeenheden, tableColumn);
 			if (info.Way == UIWay.Return) {
 				price *= 2;
 			}
-			// Add 50 cent if paying with credit card
-			if (info.Payment == UIPayment.CreditCard) {
-				price += 0.50f;
-			}
 
-			// Pay
-			switch (info.Payment) {
-			case UIPayment.CreditCard:
-				CreditCard c = new CreditCard ();
-				c.Connect ();
-				int ccid = c.BeginTransaction (price);
-				c.EndTransaction (ccid);
-				break;
-			case UIPayment.DebitCard:
-				DebitCard d = new DebitCard ();
-				d.Connect ();
-				int dcid = d.BeginTransaction (price);
-				d.EndTransaction (dcid);
-				break;
-			case UIPayment.Cash:
-				IKEAMyntAtare2000 coin = new IKEAMyntAtare2000 ();
-				coin.starta ();
-				coin.betala ((int) Math.Round(price * 100));
-				coin.stoppa ();
-				break;
-			}
+            makePayment(info.Payment, price);
 		}
+
+        private int getColumn(UIInfo info)
+        {
+            int tableColumn;
+            // First based on class
+            switch (info.Class)
+            {
+                case UIClass.FirstClass:
+                    tableColumn = 3;
+                    break;
+                default:
+                    tableColumn = 0;
+                    break;
+            }
+            // Then, on the discount
+            switch (info.Discount)
+            {
+                case UIDiscount.TwentyDiscount:
+                    tableColumn += 1;
+                    break;
+                case UIDiscount.FortyDiscount:
+                    tableColumn += 2;
+                    break;
+            }
+            return tableColumn;
+        }
+
+        private void makePayment(UIPayment payment, float price)
+        {
+            // Select the correct method of payment
+            PaymentStrategy payMethod;
+            switch (payment)
+            {
+                case UIPayment.CreditCard:
+                    // Add 50 cents if paying by credit card
+                    price += 0.50f;
+                    payMethod = new CreditCard();
+                    break;
+                case UIPayment.DebitCard:
+                    payMethod = new DebitCard();
+                    break;
+                case UIPayment.Cash:
+                    payMethod = new CoinEater();
+                    break;
+                default:
+                    payMethod = null;
+                    throw new Exception("No payment found");
+            }
+
+            // Pay
+            payMethod.Pay(price);
+        }
 
 #region Set-up -- don't look at it
 		private void initializeControls()
